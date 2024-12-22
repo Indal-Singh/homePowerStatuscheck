@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Status Monitor</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
+        .status { font-size: 24px; }
+        .status.on { color: green; }
+        .status.off { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Power Status</h1>
+    <div id="status" class="status">Connecting...</div>
+    <script>
+        const statusDiv = document.getElementById('status');
+        const socket = new WebSocket('ws://' + location.hostname + ':3005');
+
+        socket.onmessage = (event) => {
+            const status = event.data;
+            statusDiv.textContent = status === 'ON' ? 'Power ON' : 'Power OFF';
+            statusDiv.className = 'status ' + (status.toLowerCase());
+        };
+
+        socket.onopen = () => {
+            console.log('Connected to WebSocket server');
+        };
+
+        socket.onclose = () => {
+            statusDiv.textContent = 'Disconnected';
+            statusDiv.className = 'status';
+        };
+    </script>
+</body>
+</html>
