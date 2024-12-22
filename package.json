@@ -1,5 +1,5 @@
 {
-  "name": "homepowerstatuscheckapi",
+  "name": "homepowerstatuscheck",
   "version": "1.0.0",
   "main": "app.js",
   "scripts": {
@@ -12,6 +12,6 @@
   "description": "",
   "dependencies": {
     "express": "^4.21.2",
-    "socket.io": "^4.8.1"
+    "node-cron": "^3.0.3"
   }
 }

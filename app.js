@@ -1,49 +1,49 @@
 const express = require('express');
-const http = require('http');
-const WebSocket = require('ws');
+const fs = require('fs');
 const path = require('path');
+const cron = require('node-cron');
 
 const app = express();
-const server = http.createServer(app);
-const wss = new WebSocket.Server({ server });
+app.use(express.json());
 
-app.use(express.static(path.join(__dirname, 'public')));
+let powerStatus = [];
 
-// Handle WebSocket connection
-wss.on('connection', (ws) => {
-    console.log('A client connected.');
+app.use(express.static(path.join(__dirname, "public")));
 
-    // Listen for messages from the client
-    ws.on('message', (message) => {
-        console.log('Received:', message);
-
-        // Broadcast the message to all connected clients except the sender
-        wss.clients.forEach((client) => {
-            if (client !== ws && client.readyState === WebSocket.OPEN) {
-                client.send(message);
-            }
-        });
-    });
-
-    // Send a command to the client periodically
-    const interval = setInterval(() => {
-        const command = Math.random() > 0.5 ? 'ON' : 'OFF';
-        ws.send(command); // Send command to the client
-    }, 10000); // Every 10 seconds
-
-    // Handle client disconnection
-    ws.on('close', () => {
-        console.log('A client disconnected.');
-        clearInterval(interval); // Stop sending commands when client disconnects
-    });
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-// Serve the HTML UI
+app.post('/update-status', (req, res) => {
+    const { status } = req.body;
+    powerStatus.push({ status, timestamp: new Date() });
+    fs.writeFileSync('power_status.json', JSON.stringify(powerStatus));
+    res.status(200).send('Status updated.');
+});
+
 app.get('/get-status', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+    try {
+        const data = fs.readFileSync('power_status.json', 'utf8');
+        res.json(JSON.parse(data));
+    } catch (error) {
+        res.status(500).send('Error reading status file');
+    }
 });
 
-// Start the server
-server.listen(3005, () => {
-    console.log('WebSocket server running on http://localhost:3005');
+// Schedule a task to delete power_status.json at the start of every month
+cron.schedule('0 0 1 * *', () => {
+    try {
+        if (fs.existsSync('power_status.json')) {
+            fs.unlinkSync('power_status.json'); // Delete the file
+            console.log('power_status.json deleted for a new month');
+        }
+    } catch (err) {
+        console.error('Error deleting power_status.json:', err);
+    }
+}, {
+    scheduled: true,
+    timezone: "Asia/Kolkata" // Set to IST (India Standard Time)
 });
+
+const port = 3005;
+app.listen(port, () => console.log(`Server running on port ${port}`));

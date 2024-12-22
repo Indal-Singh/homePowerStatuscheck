@@ -1,37 +1,158 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Status Monitor</title>
-    <style>
-        body { font-family: Arial, sans-serif; text-align: center; margin-top: 50px; }
-        .status { font-size: 24px; }
-        .status.on { color: green; }
-        .status.off { color: red; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Light Status Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      transition: background-color 1s ease, color 1s ease;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .status-container {
+      text-align: center;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      background-color: #fff;
+      transition: transform 0.3s ease;
+    }
+
+    .status-container:hover {
+      transform: scale(1.05);
+    }
+
+    .status {
+      font-size: 1.5rem;
+      margin: 10px 0;
+      font-weight: bold;
+    }
+
+    #lightStatus {
+      font-size: 1.8rem;
+      color: #888;
+      font-weight: bold;
+      padding: 10px;
+      border-radius: 8px;
+      transition: color 1s ease, background-color 1s ease;
+    }
+
+    #lightStatus.on {
+      color: white;
+      background-color: green;
+      animation: glowOn 1s infinite alternate;
+    }
+
+    #lightStatus.off {
+      color: white;
+      background-color: red;
+      animation: glowOff 1s infinite alternate;
+    }
+
+    @keyframes glowOn {
+      0% { box-shadow: 0 0 15px green; }
+      100% { box-shadow: 0 0 25px green; }
+    }
+
+    @keyframes glowOff {
+      0% { box-shadow: 0 0 15px red; }
+      100% { box-shadow: 0 0 25px red; }
+    }
+
+    .info {
+      margin: 20px 0;
+      font-size: 1.2rem;
+      color: #333;
+    }
+
+    .info span {
+      color: #ff6347;
+    }
+  </style>
 </head>
 <body>
-    <h1>Power Status</h1>
-    <div id="status" class="status">Connecting...</div>
-    <script>
-        const statusDiv = document.getElementById('status');
-        const socket = new WebSocket('ws://' + location.hostname + ':3005');
 
-        socket.onmessage = (event) => {
-            const status = event.data;
-            statusDiv.textContent = status === 'ON' ? 'Power ON' : 'Power OFF';
-            statusDiv.className = 'status ' + (status.toLowerCase());
-        };
+  <div class="status-container">
+    <h1>Light Status Dashboard</h1>
+    <p class="status" id="lightStatus">Light is currently: -</p>
+    <p class="info">Last Update: <span id="lastUpdate">-</span></p>
+    <p class="info">Time Difference: <span id="timeDiff">-</span> minute(s)</p>
+  </div>
 
-        socket.onopen = () => {
-            console.log('Connected to WebSocket server');
-        };
+  <script>
+    const apiURL = 'https://test.raagdhun.in/get-status'; // API endpoint
 
-        socket.onclose = () => {
-            statusDiv.textContent = 'Disconnected';
-            statusDiv.className = 'status';
-        };
-    </script>
+    // Function to calculate the time difference in minutes
+    function calculateTimeDifference(lastUpdate) {
+      const now = new Date();
+      const timeDiffInMs = now - lastUpdate; // Time difference in milliseconds
+      const timeDiffInMinutes = Math.floor(timeDiffInMs / (1000 * 60)); // Convert ms to minutes
+      return timeDiffInMinutes;
+    }
+
+    // Function to update light status based on time difference
+    function updateLightStatus(timeDifference) {
+      const lightStatusElement = document.getElementById('lightStatus');
+      
+      if (timeDifference > 1) {
+        lightStatusElement.textContent = "Light is currently: OFF";
+        lightStatusElement.classList.remove('on');
+        lightStatusElement.classList.add('off');
+      } else {
+        lightStatusElement.textContent = "Light is currently: ON";
+        lightStatusElement.classList.remove('off');
+        lightStatusElement.classList.add('on');
+      }
+    }
+
+    async function fetchAndUpdateStatus() {
+      try {
+        const response = await fetch(apiURL);
+        const jsonData = await response.json();
+
+        if (jsonData.length === 0) {
+          document.getElementById('lightStatus').textContent = "Light is currently: OFF";
+          document.getElementById('lastUpdate').textContent = "-";
+          document.getElementById('timeDiff').textContent = "-";
+          return;
+        }
+
+        // Get the timestamp of the latest update
+        const latestEntry = jsonData[jsonData.length - 1];
+        const lastUpdateTimestamp = new Date(latestEntry.timestamp);
+        const timeDifference = calculateTimeDifference(lastUpdateTimestamp);
+
+        // Display the last update time and the time difference
+        document.getElementById('lastUpdate').textContent = lastUpdateTimestamp.toLocaleString();
+        document.getElementById('timeDiff').textContent = `${timeDifference}`;
+
+        // Update the light status based on the time difference
+        updateLightStatus(timeDifference);
+      } catch (error) {
+        console.error('Error fetching or processing data:', error);
+      }
+    }
+
+    // Fetch and update light status on page load
+    fetchAndUpdateStatus();
+
+    // Optional: Refresh the status periodically every 30 seconds
+    setInterval(fetchAndUpdateStatus, 30000);
+  </script>
+
 </body>
 </html>
