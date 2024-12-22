@@ -13,8 +13,8 @@ This project monitors the power status of a home using a NodeMCU and displays th
 
 1. Clone the repository:
     ```sh
-    git clone <repository-url>
-    cd <repository-directory>
+    git clone https://github.com/Indal-Singh/homePowerStatuscheck.git
+    cd homePowerStatuscheck
     ```
 
 2. Install the dependencies:
