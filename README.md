@@ -1,6 +1,9 @@
 # Home Power Status Check
 
-This project monitors the power status of a home using a NodeMCU and displays the status on a web dashboard.
+This project monitors the power status of a home using a NodeMCU and displays the status on a web dashboard. 
+
+## Why Make This Project
+
 
 ## Project Structure
 
