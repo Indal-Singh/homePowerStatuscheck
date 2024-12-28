@@ -4,6 +4,7 @@ This project monitors the power status of a home using a NodeMCU and displays th
 
 ## Why Make This Project
 
+I created this project because frequent power cuts at my home disrupt my work. I often need to work from home urgently, but the lack of electricity forces me to find alternative locations.
 
 ## Project Structure
 
